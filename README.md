@@ -2,6 +2,72 @@
 Self-Driving Car Engineer Nanodegree Program
 
 ---
+## Solution
+### The model
+
+The vehicle model is based on the simple kinematic model (introduced in the course). 
+The vehicle state is composed of:
+
+- x: vehicle's x coordinate
+- y: vehicle's y coordinate
+- psi: vehicle' heading direction.
+- v: vehicle's velocity.
+- cte: cross-track error.
+- epsi: orientation error.
+
+The actuators are the controls of the system, and are composed of:
+- delta: represents the steering angle
+- a: the acceleration (throttle and brake combined).
+ 
+Both values are limited to [-1,1].
+
+To update the vehicle's state, the following equations are used:
+```
+x[t+1] = x[t] + v[t] * cos(psi[t]) * dt
+y[t+1] = y[t] + v[t] * sin(psi[t]) * dt
+psi[t+1] = psi[t] + v[t] / Lf * delta[t] * dt
+v[t+1] = v[t] + a[t] * dt
+cte[t+1] = f(x[t]) - y[t] + v[t] * sin(epsi[t]) * dt
+epsi[t+1] = psi[t] - psides[t] + v[t] * delta[t] / Lf * dt
+```
+where: 
+- Lf is defined as the distance between the front of the vehicle and its center of gravity.
+- f(t) is the parameteric form of the idea trajectory at time t.
+- psides(t) is atan of 1st derivative of the trajectory
+
+
+To prioritize some cost factors on top of other, weight constants are applied in the cost function.
+
+### Timestamp Length and Elapsed Duration (N & dt)
+
+Optimizer tries to predict N future actuations with the dt seconds in-between for a given state and computes future states for those actuations. 
+We need to choose `N` and `dt` properly which results in balancing between optimization time and accuracy. 
+
+After some experimentation I have selected the following values for driving a vehicle:
+N = 10
+dt = 0.1 sec
+
+I Also I tried lower and hither value paris e.g. N = 7 & dt = 0.1, N = 20 & dt=0.05 where:
+- low values of N caused the car to leave the road in a few seconds
+- high values of N made a very unstable driving
+- small dt values make the car more unstable
+- large dt values make the car drive smoother, but the vehicle is too slow to respond to changes
+
+In general, bigger amount of steps and smaller time steps lead to bigger than needed computation time while less amount of steps and bigger time steps make optimization not accurate enough.
+
+
+### Preprocessing
+I transform viewpoints into the vehicle's coordinate system and then fit the cubic polynomial to approximate center of the lane. 
+This approach allowed the car to drive fast in the center of the traffic lane which is specified as a number or points in the global coordinate system.
+
+
+### Latency
+As the requirements of assignment, we have a latency to 100 ms between the moment we get actuators values and its application by the vehicle.
+In order to handle the delay I freeze/cache actuators values to the values of the previous step.
+This way the vehicle uses previous actuators during the delay hence is able to handle the delay as required.
+
+### Test drive
+[Video - test drive](https://www.dropbox.com/s/pnh3a6q7qnxisp1/MPC.m4v?dl=0)
 
 ## Dependencies
 
